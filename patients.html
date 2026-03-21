@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patients - Modern HMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .bg-primary {
+            background: #3b82f6;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-hospital-symbol"></i> HMS
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="patients.html" class="active"><i class="fas fa-user-injured"></i> Patients</a></li>
+            <li><a href="doctors.html"><i class="fas fa-user-md"></i> Doctors</a></li>
+            <li><a href="schedule.html"><i class="fas fa-calendar-alt"></i> Schedule</a></li>
+            <li><a href="appointments.html"><i class="fas fa-calendar-check"></i> Appointments</a></li>
+            <li><a href="billing.html"><i class="fas fa-file-invoice-dollar"></i> Billing</a></li>
+            <li><a href="pharmacy.html"><i class="fas fa-pills"></i> Pharmacy</a></li>
+            <li><a href="lab.html"><i class="fas fa-flask"></i> Lab</a></li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="header">
+            <div class="page-title">Patient Records</div>
+            <div class="user-info">
+                <span id="userNameDisplay">Loading...</span>
+                <span class="badge bg-success" id="userRoleDisplay">Role</span>
+                <button id="logoutBtn" class="btn btn-danger btn-sm"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </header>
+
+        <section class="content-area">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Patient List</h2>
+                    <button class="btn btn-primary" onclick="showModal('patientModal')"><i class="fas fa-plus"></i> Add
+                        Patient</button>
+                </div>
+                <div class="table-responsive">
+                    <table id="patientsTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Date of Birth</th>
+                                <th>Gender</th>
+                                <th>Contact</th>
+                                <th>Address</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="7">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Patient Modal -->
+    <div class="modal" id="patientModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add/Edit Patient</h2>
+                <button class="close-btn" onclick="hideModal('patientModal')">&times;</button>
+            </div>
+            <form id="patientForm">
+                <input type="hidden" name="id" id="patientId">
+                <div class="form-group">
+                    <label>First Name</label>
+                    <input type="text" name="first_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Last Name</label>
+                    <input type="text" name="last_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Date of Birth</label>
+                    <input type="date" name="dob" required>
+                </div>
+                <div class="form-group">
+                    <label>Gender</label>
+                    <select name="gender" required>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Blood Group</label>
+                    <input type="text" name="blood_group">
+                </div>
+                <div class="form-group">
+                    <label>Contact Number</label>
+                    <input type="text" name="contact">
+                </div>
+                <div class="form-group">
+                    <label>Address</label>
+                    <textarea name="address" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Save Patient</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        async function loadPatients() {
+            try {
+                const patients = await api.get('patients');
+                const tbody = document.querySelector('#patientsTable tbody');
+                tbody.innerHTML = '';
+                if (patients && patients.length > 0 && !patients.error) {
+                    patients.forEach(p => {
+                        const tr = document.createElement('tr');
+                        // Properly stringify objects for inline onClick arguments
+                        const pJson = JSON.stringify(p).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+                        tr.innerHTML = `
+                                <td>#${p.id}</td>
+                                <td>${p.first_name} ${p.last_name}</td>
+                                <td>${p.dob || 'N/A'}</td>
+                                <td><span class="badge ${p.gender === 'male' ? 'bg-primary' : (p.gender === 'female' ? 'bg-warning' : 'bg-success')}">${p.gender}</span></td>
+                                <td>${p.contact || 'N/A'}</td>
+                                <td>${p.address || 'N/A'}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" onclick="editPatient('${pJson}')"><i class="fas fa-edit"></i></button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteItem('patients', ${p.id}, loadPatients)"><i class="fas fa-trash"></i></button>
+                                </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="7">No patients found</td></tr>';
+                }
+            } catch (err) {
+                console.error(err);
+                document.querySelector('#patientsTable tbody').innerHTML = '<tr><td colspan="7">Error loading data.</td></tr>';
+            }
+        }
+
+        function editPatient(dataStr) {
+            const data = JSON.parse(dataStr);
+            populateForm('patientForm', data);
+            document.getElementById('modalTitle').textContent = 'Edit Patient';
+            showModal('patientModal');
+        }
+
+        document.getElementById('patientForm').addEventListener('submit', (e) => {
+            handleFormSubmit(e, 'patients', loadPatients);
+        });
+
+        document.addEventListener('DOMContentLoaded', loadPatients);
+    </script>
+</body>
+
+</html>

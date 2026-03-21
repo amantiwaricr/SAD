@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Schedules - Modern HMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .badge.bg-primary { background: #3b82f6; color: white; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-hospital-symbol"></i> HMS
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="patients.html"><i class="fas fa-user-injured"></i> Patients</a></li>
+            <li><a href="doctors.html"><i class="fas fa-user-md"></i> Doctors</a></li>
+            <li><a href="schedule.html" class="active"><i class="fas fa-calendar-alt"></i> Schedule</a></li>
+            <li><a href="billing.html"><i class="fas fa-file-invoice-dollar"></i> Billing</a></li>
+            <li><a href="pharmacy.html"><i class="fas fa-pills"></i> Pharmacy</a></li>
+            <li><a href="lab.html"><i class="fas fa-flask"></i> Lab</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <header class="header">
+            <div class="page-title">Doctor Schedules</div>
+            <div class="user-info">
+                <span id="userNameDisplay">Loading...</span>
+                <span class="badge bg-success" id="userRoleDisplay">Role</span>
+                <button id="logoutBtn" class="btn btn-danger btn-sm"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </header>
+
+        <section class="content-area">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Schedule List</h2>
+                    <button class="btn btn-primary" onclick="openScheduleModal()"><i class="fas fa-plus"></i> Add Schedule</button>
+                </div>
+                <div class="table-responsive">
+                    <table id="scheduleTable">
+                        <thead>
+                            <tr>
+                                <th>Doctor</th>
+                                <th>Day of Week</th>
+                                <th>Start Time</th>
+                                <th>End Time</th>
+                                <th>Availability</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="6">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal -->
+    <div class="modal" id="scheduleModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Schedule</h2>
+                <button class="close-btn" onclick="hideModal('scheduleModal')">&times;</button>
+            </div>
+            <form id="scheduleForm">
+                <div class="form-group">
+                    <label>Doctor</label>
+                    <select name="doctor_id" id="doctorSelect" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Day of Week</label>
+                    <select name="day_of_week" required>
+                        <option value="Monday">Monday</option>
+                        <option value="Tuesday">Tuesday</option>
+                        <option value="Wednesday">Wednesday</option>
+                        <option value="Thursday">Thursday</option>
+                        <option value="Friday">Friday</option>
+                        <option value="Saturday">Saturday</option>
+                        <option value="Sunday">Sunday</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Start Time</label>
+                    <input type="time" name="start_time" required>
+                </div>
+                <div class="form-group">
+                    <label>End Time</label>
+                    <input type="time" name="end_time" required>
+                </div>
+                <div class="form-group">
+                    <label>Availability</label>
+                    <select name="available">
+                        <option value="1">Available</option>
+                        <option value="0">Not Available</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Save Schedule</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        let doctorsData = [];
+
+        async function loadSchedules() {
+            try {
+                // Fetch doctors for dropdown
+                doctorsData = await api.get('doctors');
+                
+                const data = await api.get('schedules');
+                const tbody = document.querySelector('#scheduleTable tbody');
+                tbody.innerHTML = '';
+                if(data && data.length > 0 && Array.isArray(data)) {
+                    data.forEach(d => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>Dr. ${d.doctor_name || d.doctor_id}</td>
+                            <td>${d.day_of_week}</td>
+                            <td>${d.start_time}</td>
+                            <td>${d.end_time}</td>
+                            <td><span class="badge ${d.available == 1 ? 'bg-success' : 'bg-danger'}">${d.available == 1 ? 'Available' : 'Unavailable'}</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-danger" onclick="deleteItem('schedules', ${d.id}, loadSchedules)"><i class="fas fa-trash"></i></button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6">No schedules found</td></tr>';
+                }
+            } catch (err) {
+                console.error(err);
+                document.querySelector('#scheduleTable tbody').innerHTML = '<tr><td colspan="6">Error loading data.</td></tr>';
+            }
+        }
+
+        function openScheduleModal() {
+            const select = document.getElementById('doctorSelect');
+            select.innerHTML = '<option value="">Select Doctor</option>';
+            if(Array.isArray(doctorsData)) {
+                doctorsData.forEach(doc => {
+                    select.innerHTML += `<option value="${doc.id}">Dr. ${doc.first_name} ${doc.last_name} (${doc.specialization})</option>`;
+                });
+            }
+            showModal('scheduleModal');
+        }
+
+        document.getElementById('scheduleForm').addEventListener('submit', (e) => {
+            handleFormSubmit(e, 'schedules', loadSchedules);
+        });
+
+        document.addEventListener('DOMContentLoaded', loadSchedules);
+    </script>
+</body>
+</html>

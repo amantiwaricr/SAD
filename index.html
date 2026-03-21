@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Modern HMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;">
+                <i class="fas fa-hospital-user"></i>
+            </div>
+            <h1>Welcome Back</h1>
+            <p>Sign in to access the Hospital Management System</p>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Enter your username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter your password" required>
+                </div>
+                <!-- Adding a note for the demo -->
+                <p style="font-size: 0.8rem; color: #888; text-align: left; margin-bottom: 5px;">Demo Admin: admin /
+                    admin123</p>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
+                <div style="text-align: center; margin-top: 15px;">
+                    <a href="#" id="showRegister" style="font-size: 0.9rem; color: var(--primary-color); text-decoration: none;">Don't have an account? Sign up</a>
+                </div>
+            </form>
+
+            <form id="registerForm" style="display: none;">
+                <div class="form-group">
+                    <label for="reg_username">Username</label>
+                    <input type="text" id="reg_username" placeholder="Choose a username" required>
+                </div>
+                <div class="form-group">
+                    <label for="reg_password">Password</label>
+                    <input type="password" id="reg_password" placeholder="Choose a password" required>
+                </div>
+                <div class="form-group">
+                    <label for="reg_confirm_password">Confirm Password</label>
+                    <input type="password" id="reg_confirm_password" placeholder="Confirm your password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Sign Up</button>
+                <div style="text-align: center; margin-top: 15px;">
+                    <a href="#" id="showLogin" style="font-size: 0.9rem; color: var(--primary-color); text-decoration: none;">Already have an account? Sign in</a>
+                </div>
+            </form>
+
+            <div id="authError"
+                style="color: var(--danger-color); margin-top: 1rem; font-size: 0.875rem; display: none;"></div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        // Check if already logged in
+        api.checkAuth().then(res => {
+            if (res.status === 'success') {
+                window.location.href = 'dashboard.html';
+            }
+        });
+
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const errorDiv = document.getElementById('authError');
+
+        // Toggle UI
+        document.getElementById('showRegister').addEventListener('click', (e) => {
+            e.preventDefault();
+            loginForm.style.display = 'none';
+            registerForm.style.display = 'block';
+            errorDiv.style.display = 'none';
+            document.querySelector('.auth-card h1').textContent = 'Create Account';
+            document.querySelector('.auth-card p').textContent = 'Sign up to join the system';
+        });
+
+        document.getElementById('showLogin').addEventListener('click', (e) => {
+            e.preventDefault();
+            registerForm.style.display = 'none';
+            loginForm.style.display = 'block';
+            errorDiv.style.display = 'none';
+            document.querySelector('.auth-card h1').textContent = 'Welcome Back';
+            document.querySelector('.auth-card p').textContent = 'Sign in to access the Hospital Management System';
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const res = await api.login(username, password);
+                if (res.status === 'success') {
+                    window.location.href = 'dashboard.html';
+                } else {
+                    errorDiv.textContent = res.message;
+                    errorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                errorDiv.textContent = 'Connection error. Please try again later.';
+                errorDiv.style.display = 'block';
+            }
+        });
+
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('reg_username').value;
+            const password = document.getElementById('reg_password').value;
+            const confirm = document.getElementById('reg_confirm_password').value;
+
+            if (password !== confirm) {
+                errorDiv.textContent = 'Passwords do not match';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const res = await api.register(username, password);
+                if (res.status === 'success') {
+                    window.location.href = 'dashboard.html';
+                } else {
+                    errorDiv.textContent = res.message || 'Error creating account';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                console.error(err);
+                errorDiv.textContent = 'Connection error. Please try again later.';
+                errorDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+
+</html>

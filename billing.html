@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billing - Modern HMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-hospital-symbol"></i> HMS
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="patients.html"><i class="fas fa-user-injured"></i> Patients</a></li>
+            <li><a href="doctors.html"><i class="fas fa-user-md"></i> Doctors</a></li>
+            <li><a href="schedule.html"><i class="fas fa-calendar-alt"></i> Schedule</a></li>
+            <li><a href="appointments.html"><i class="fas fa-calendar-check"></i> Appointments</a></li>
+            <li><a href="billing.html" class="active"><i class="fas fa-file-invoice-dollar"></i> Billing</a></li>
+            <li><a href="pharmacy.html"><i class="fas fa-pills"></i> Pharmacy</a></li>
+            <li><a href="lab.html"><i class="fas fa-flask"></i> Lab</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <header class="header">
+            <div class="page-title">Billing & Payments</div>
+            <div class="user-info">
+                <span id="userNameDisplay">Loading...</span>
+                <span class="badge bg-success" id="userRoleDisplay">Role</span>
+                <button id="logoutBtn" class="btn btn-danger btn-sm"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </header>
+
+        <section class="content-area">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Invoices</h2>
+                    <button class="btn btn-primary" onclick="openBillingModal()"><i class="fas fa-plus"></i> Create Invoice</button>
+                </div>
+                <div class="table-responsive">
+                    <table id="billingTable">
+                        <thead>
+                            <tr>
+                                <th>Invoice ID</th>
+                                <th>Patient Name</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Description</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="7">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal -->
+    <div class="modal" id="billingModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create Invoice</h2>
+                <button class="close-btn" onclick="hideModal('billingModal')">&times;</button>
+            </div>
+            <form id="billingForm">
+                <input type="hidden" name="id">
+                <div class="form-group">
+                    <label>Patient</label>
+                    <select name="patient_id" id="patientSelect" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Amount (Rs)</label>
+                    <input type="number" step="0.01" name="amount" required>
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" name="date" required>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select name="status" required>
+                        <option value="unpaid">Unpaid</option>
+                        <option value="paid">Paid</option>
+                        <option value="partial">Partial</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" rows="2"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Save Invoice</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Status Change Modal -->
+    <div class="modal" id="statusModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Update Status</h2>
+                <button class="close-btn" onclick="hideModal('statusModal')">&times;</button>
+            </div>
+            <form id="statusForm">
+                <input type="hidden" name="id" id="statusId">
+                <div class="form-group">
+                    <label>Status</label>
+                    <select name="status" required>
+                        <option value="unpaid">Unpaid</option>
+                        <option value="paid">Paid</option>
+                        <option value="partial">Partial</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Update Status</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        let patientsData = [];
+
+        async function loadBilling() {
+            try {
+                // Fetch patients for dropdown
+                patientsData = await api.get('patients');
+                
+                const data = await api.get('billing');
+                const tbody = document.querySelector('#billingTable tbody');
+                tbody.innerHTML = '';
+                if(data && data.length > 0 && Array.isArray(data)) {
+                    data.forEach(d => {
+                        const tr = document.createElement('tr');
+                        const statusClass = d.status === 'paid' ? 'bg-success' : (d.status === 'unpaid' ? 'bg-danger' : 'bg-warning');
+                        tr.innerHTML = `
+                            <td>INV-${d.id}</td>
+                            <td>${d.patient_name || d.patient_id}</td>
+                            <td>Rs ${d.amount}</td>
+                            <td>${d.date}</td>
+                            <td><span class="badge ${statusClass}">${d.status.toUpperCase()}</span></td>
+                            <td>${d.description || 'N/A'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="updateStatus(${d.id})"><i class="fas fa-check"></i> Status</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteItem('billing', ${d.id}, loadBilling)"><i class="fas fa-trash"></i></button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="7">No invoices found</td></tr>';
+                }
+            } catch (err) {
+                console.error(err);
+                document.querySelector('#billingTable tbody').innerHTML = '<tr><td colspan="7">Error loading data.</td></tr>';
+            }
+        }
+
+        function openBillingModal() {
+            const select = document.getElementById('patientSelect');
+            select.innerHTML = '<option value="">Select Patient</option>';
+            if(Array.isArray(patientsData)) {
+                patientsData.forEach(p => {
+                    select.innerHTML += `<option value="${p.id}">${p.first_name} ${p.last_name}</option>`;
+                });
+            }
+            showModal('billingModal');
+        }
+
+        function updateStatus(id) {
+            document.getElementById('statusId').value = id;
+            showModal('statusModal');
+        }
+
+        document.getElementById('billingForm').addEventListener('submit', (e) => {
+            handleFormSubmit(e, 'billing', loadBilling);
+        });
+        
+        document.getElementById('statusForm').addEventListener('submit', (e) => {
+            // Update uses PUT method
+            handleFormSubmit(e, 'billing', loadBilling);
+        });
+
+        document.addEventListener('DOMContentLoaded', loadBilling);
+    </script>
+</body>
+</html>

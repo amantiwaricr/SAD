@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pharmacy - Modern HMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-hospital-symbol"></i> HMS
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="patients.html"><i class="fas fa-user-injured"></i> Patients</a></li>
+            <li><a href="doctors.html"><i class="fas fa-user-md"></i> Doctors</a></li>
+            <li><a href="schedule.html"><i class="fas fa-calendar-alt"></i> Schedule</a></li>
+            <li><a href="appointments.html"><i class="fas fa-calendar-check"></i> Appointments</a></li>
+            <li><a href="billing.html"><i class="fas fa-file-invoice-dollar"></i> Billing</a></li>
+            <li><a href="pharmacy.html" class="active"><i class="fas fa-pills"></i> Pharmacy</a></li>
+            <li><a href="lab.html"><i class="fas fa-flask"></i> Lab</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <header class="header">
+            <div class="page-title">Pharmacy Inventory</div>
+            <div class="user-info">
+                <span id="userNameDisplay">Loading...</span>
+                <span class="badge bg-success" id="userRoleDisplay">Role</span>
+                <button id="logoutBtn" class="btn btn-danger btn-sm"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </header>
+
+        <section class="content-area">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Inventory List</h2>
+                    <button class="btn btn-primary" onclick="showModal('inventoryModal')"><i class="fas fa-plus"></i> Add Item</button>
+                </div>
+                <div class="table-responsive">
+                    <table id="inventoryTable">
+                        <thead>
+                            <tr>
+                                <th>Item Name</th>
+                                <th>Quantity (Stock)</th>
+                                <th>Price per unit</th>
+                                <th>Expiry Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="5">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal -->
+    <div class="modal" id="inventoryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Item to Inventory</h2>
+                <button class="close-btn" onclick="hideModal('inventoryModal')">&times;</button>
+            </div>
+            <form id="inventoryForm">
+                <div class="form-group">
+                    <label>Item Name</label>
+                    <input type="text" name="item_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Quantity</label>
+                    <input type="number" name="quantity" required>
+                </div>
+                <div class="form-group">
+                    <label>Price (Rs)</label>
+                    <input type="number" step="0.01" name="price" required>
+                </div>
+                <div class="form-group">
+                    <label>Expiry Date</label>
+                    <input type="date" name="expiry_date" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Save Item</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        async function loadInventory() {
+            try {
+                const data = await api.get('pharmacy');
+                const tbody = document.querySelector('#inventoryTable tbody');
+                tbody.innerHTML = '';
+                if(data && data.length > 0 && Array.isArray(data)) {
+                    data.forEach(d => {
+                        const tr = document.createElement('tr');
+                        
+                        // Check expiry
+                        const today = new Date();
+                        const expiry = new Date(d.expiry_date);
+                        const isExpired = expiry < today;
+                        const stockLow = d.quantity < 10;
+
+                        tr.innerHTML = `
+                            <td>${d.item_name}</td>
+                            <td><span class="badge ${stockLow ? 'bg-warning' : 'bg-success'}">${d.quantity} units</span></td>
+                            <td>Rs ${d.price}</td>
+                            <td><span class="${isExpired ? 'text-danger fw-bold' : ''}" style="${isExpired ? 'color: red;' : ''}">${d.expiry_date}</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-danger" onclick="deleteItem('pharmacy', ${d.id}, loadInventory)"><i class="fas fa-trash"></i></button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5">No items found in inventory</td></tr>';
+                }
+            } catch (err) {
+                console.error(err);
+                document.querySelector('#inventoryTable tbody').innerHTML = '<tr><td colspan="5">Error loading data.</td></tr>';
+            }
+        }
+
+        document.getElementById('inventoryForm').addEventListener('submit', (e) => {
+            handleFormSubmit(e, 'pharmacy', loadInventory);
+        });
+
+        document.addEventListener('DOMContentLoaded', loadInventory);
+    </script>
+</body>
+</html>

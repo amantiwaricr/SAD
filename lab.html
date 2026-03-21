@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Checkups - Modern HMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-hospital-symbol"></i> HMS
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="patients.html"><i class="fas fa-user-injured"></i> Patients</a></li>
+            <li><a href="doctors.html"><i class="fas fa-user-md"></i> Doctors</a></li>
+            <li><a href="schedule.html"><i class="fas fa-calendar-alt"></i> Schedule</a></li>
+            <li><a href="appointments.html"><i class="fas fa-calendar-check"></i> Appointments</a></li>
+            <li><a href="billing.html"><i class="fas fa-file-invoice-dollar"></i> Billing</a></li>
+            <li><a href="pharmacy.html"><i class="fas fa-pills"></i> Pharmacy</a></li>
+            <li><a href="lab.html" class="active"><i class="fas fa-flask"></i> Lab</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <header class="header">
+            <div class="page-title">Laboratory & Checkups</div>
+            <div class="user-info">
+                <span id="userNameDisplay">Loading...</span>
+                <span class="badge bg-success" id="userRoleDisplay">Role</span>
+                <button id="logoutBtn" class="btn btn-danger btn-sm"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </header>
+
+        <section class="content-area">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Lab Tests</h2>
+                    <button class="btn btn-primary" onclick="openLabModal()"><i class="fas fa-plus"></i> New Test</button>
+                </div>
+                <div class="table-responsive">
+                    <table id="labTable">
+                        <thead>
+                            <tr>
+                                <th>Test ID</th>
+                                <th>Patient Name</th>
+                                <th>Test Name</th>
+                                <th>Test Date</th>
+                                <th>Status</th>
+                                <th>Result</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="7">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Add -->
+    <div class="modal" id="labModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Request Lab Test</h2>
+                <button class="close-btn" onclick="hideModal('labModal')">&times;</button>
+            </div>
+            <form id="labForm">
+                <div class="form-group">
+                    <label>Patient</label>
+                    <select name="patient_id" id="labPatientSelect" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Test Name</label>
+                    <input type="text" name="test_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Test Date</label>
+                    <input type="date" name="test_date" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Save Test Request</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Update Result -->
+    <div class="modal" id="resultModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Update Lab Result</h2>
+                <button class="close-btn" onclick="hideModal('resultModal')">&times;</button>
+            </div>
+            <form id="resultForm">
+                <input type="hidden" name="id" id="resultId">
+                <div class="form-group">
+                    <label>Status</label>
+                    <select name="status" required>
+                        <option value="pending">Pending</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Result Summary</label>
+                    <textarea name="result" rows="4"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Update Result</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        let patientsDataLab = [];
+
+        async function loadLabTests() {
+            try {
+                // Fetch patients for dropdown
+                patientsDataLab = await api.get('patients');
+                
+                const data = await api.get('lab');
+                const tbody = document.querySelector('#labTable tbody');
+                tbody.innerHTML = '';
+                if(data && data.length > 0 && Array.isArray(data)) {
+                    data.forEach(d => {
+                        const tr = document.createElement('tr');
+                        const statusClass = d.status === 'completed' ? 'bg-success' : 'bg-warning';
+                        tr.innerHTML = `
+                            <td>LAB-${d.id}</td>
+                            <td>${d.patient_name || d.patient_id}</td>
+                            <td>${d.test_name}</td>
+                            <td>${d.test_date}</td>
+                            <td><span class="badge ${statusClass}">${d.status.toUpperCase()}</span></td>
+                            <td>${d.result ? d.result.substring(0,20)+'...' : 'N/A'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="updateResult(${d.id})"><i class="fas fa-microscope"></i> Result</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteItem('lab', ${d.id}, loadLabTests)"><i class="fas fa-trash"></i></button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="7">No lab tests found</td></tr>';
+                }
+            } catch (err) {
+                console.error(err);
+                document.querySelector('#labTable tbody').innerHTML = '<tr><td colspan="7">Error loading data.</td></tr>';
+            }
+        }
+
+        function openLabModal() {
+            const select = document.getElementById('labPatientSelect');
+            select.innerHTML = '<option value="">Select Patient</option>';
+            if(Array.isArray(patientsDataLab)) {
+                patientsDataLab.forEach(p => {
+                    select.innerHTML += `<option value="${p.id}">${p.first_name} ${p.last_name}</option>`;
+                });
+            }
+            showModal('labModal');
+        }
+
+        function updateResult(id) {
+            document.getElementById('resultId').value = id;
+            showModal('resultModal');
+        }
+
+        document.getElementById('labForm').addEventListener('submit', (e) => {
+            handleFormSubmit(e, 'lab', loadLabTests);
+        });
+        
+        document.getElementById('resultForm').addEventListener('submit', (e) => {
+            handleFormSubmit(e, 'lab', loadLabTests);
+        });
+
+        document.addEventListener('DOMContentLoaded', loadLabTests);
+    </script>
+</body>
+</html>
