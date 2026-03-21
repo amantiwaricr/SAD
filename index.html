@@ -32,26 +32,7 @@
                     admin123</p>
                 <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
                 <div style="text-align: center; margin-top: 15px;">
-                    <a href="#" id="showRegister" style="font-size: 0.9rem; color: var(--primary-color); text-decoration: none;">Don't have an account? Sign up</a>
-                </div>
-            </form>
-
-            <form id="registerForm" style="display: none;">
-                <div class="form-group">
-                    <label for="reg_username">Username</label>
-                    <input type="text" id="reg_username" placeholder="Choose a username" required>
-                </div>
-                <div class="form-group">
-                    <label for="reg_password">Password</label>
-                    <input type="password" id="reg_password" placeholder="Choose a password" required>
-                </div>
-                <div class="form-group">
-                    <label for="reg_confirm_password">Confirm Password</label>
-                    <input type="password" id="reg_confirm_password" placeholder="Confirm your password" required>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Sign Up</button>
-                <div style="text-align: center; margin-top: 15px;">
-                    <a href="#" id="showLogin" style="font-size: 0.9rem; color: var(--primary-color); text-decoration: none;">Already have an account? Sign in</a>
+                    <a href="signup.html" style="font-size: 0.9rem; color: var(--primary-color); text-decoration: none;">Don't have an account? Sign up</a>
                 </div>
             </form>
 
@@ -70,27 +51,7 @@
         });
 
         const loginForm = document.getElementById('loginForm');
-        const registerForm = document.getElementById('registerForm');
         const errorDiv = document.getElementById('authError');
-
-        // Toggle UI
-        document.getElementById('showRegister').addEventListener('click', (e) => {
-            e.preventDefault();
-            loginForm.style.display = 'none';
-            registerForm.style.display = 'block';
-            errorDiv.style.display = 'none';
-            document.querySelector('.auth-card h1').textContent = 'Create Account';
-            document.querySelector('.auth-card p').textContent = 'Sign up to join the system';
-        });
-
-        document.getElementById('showLogin').addEventListener('click', (e) => {
-            e.preventDefault();
-            registerForm.style.display = 'none';
-            loginForm.style.display = 'block';
-            errorDiv.style.display = 'none';
-            document.querySelector('.auth-card h1').textContent = 'Welcome Back';
-            document.querySelector('.auth-card p').textContent = 'Sign in to access the Hospital Management System';
-        });
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -106,33 +67,6 @@
                     errorDiv.style.display = 'block';
                 }
             } catch (err) {
-                errorDiv.textContent = 'Connection error. Please try again later.';
-                errorDiv.style.display = 'block';
-            }
-        });
-
-        registerForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = document.getElementById('reg_username').value;
-            const password = document.getElementById('reg_password').value;
-            const confirm = document.getElementById('reg_confirm_password').value;
-
-            if (password !== confirm) {
-                errorDiv.textContent = 'Passwords do not match';
-                errorDiv.style.display = 'block';
-                return;
-            }
-
-            try {
-                const res = await api.register(username, password);
-                if (res.status === 'success') {
-                    window.location.href = 'dashboard.html';
-                } else {
-                    errorDiv.textContent = res.message || 'Error creating account';
-                    errorDiv.style.display = 'block';
-                }
-            } catch (err) {
-                console.error(err);
                 errorDiv.textContent = 'Connection error. Please try again later.';
                 errorDiv.style.display = 'block';
             }

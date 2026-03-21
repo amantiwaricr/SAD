@@ -55,11 +55,6 @@ if ($action === 'login') {
         $stmt->execute([$username, $hash, $role]);
         $new_user_id = $conn->lastInsertId();
 
-        // Automatically log them in
-        $_SESSION['user_id'] = $new_user_id;
-        $_SESSION['role'] = $role;
-        $_SESSION['username'] = $username;
-
         echo json_encode([
             "status" => "success", 
             "message" => "Registration successful", 
