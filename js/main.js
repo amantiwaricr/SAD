@@ -6,6 +6,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (res.status !== 'success') {
             window.location.href = 'index.html';
         } else {
+            // Restrict admin dashboard to admins only
+            if (window.location.pathname.endsWith('admin_dashboard.html') && res.user.role !== 'admin') {
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
             const userNameDisplay = document.getElementById('userNameDisplay');
             const userRoleDisplay = document.getElementById('userRoleDisplay');
             if(userNameDisplay) userNameDisplay.textContent = res.user.username;

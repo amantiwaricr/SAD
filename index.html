@@ -27,6 +27,13 @@
                     <label for="password">Password</label>
                     <input type="password" id="password" placeholder="Enter your password" required>
                 </div>
+                <div class="form-group">
+                    <label for="login_role">Login As</label>
+                    <select id="login_role" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid #e5e7eb; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.95rem; outline: none; background: white;">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
                 <!-- Adding a note for the demo -->
                 <p style="font-size: 0.8rem; color: #888; text-align: left; margin-bottom: 5px;">Demo Admin: admin /
                     admin123</p>
@@ -46,7 +53,11 @@
         // Check if already logged in
         api.checkAuth().then(res => {
             if (res.status === 'success') {
-                window.location.href = 'dashboard.html';
+                if (res.user && res.user.role === 'admin') {
+                    window.location.href = 'admin_dashboard.html';
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
             }
         });
 
@@ -57,11 +68,22 @@
             e.preventDefault();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
+            const selectedRole = document.getElementById('login_role').value;
 
             try {
                 const res = await api.login(username, password);
                 if (res.status === 'success') {
-                    window.location.href = 'dashboard.html';
+                    if (selectedRole === 'admin' && res.role !== 'admin') {
+                        errorDiv.textContent = 'Access denied. Administrator privileges required.';
+                        errorDiv.style.display = 'block';
+                        return;
+                    }
+                    
+                    if (selectedRole === 'admin') {
+                        window.location.href = 'admin_dashboard.html';
+                    } else {
+                        window.location.href = 'dashboard.html';
+                    }
                 } else {
                     errorDiv.textContent = res.message;
                     errorDiv.style.display = 'block';

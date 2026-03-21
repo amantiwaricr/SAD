@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Modern HMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-hospital-symbol"></i> Admin HMS
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="admin_dashboard.html" class="active"><i class="fas fa-chart-line"></i> Summary</a></li>
+            <li><a href="#"><i class="fas fa-users-cog"></i> Users Management</a></li>
+            <li><a href="#"><i class="fas fa-user-md"></i> Doctors Database</a></li>
+            <li><a href="#"><i class="fas fa-cogs"></i> System Settings</a></li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="header">
+            <div class="page-title">Admin Dashboard</div>
+            <div class="user-info">
+                <span id="userNameDisplay">Admin</span>
+                <span class="badge bg-danger" id="userRoleDisplay">Administrator</span>
+                <button id="logoutBtn" class="btn btn-danger btn-sm"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </header>
+
+        <section class="content-area">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #ef4444;"><i class="fas fa-users-cog"></i></div>
+                    <div class="stat-info">
+                        <h3>Total System Users</h3>
+                        <p id="totalUsers">Loading...</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #10b981;"><i class="fas fa-user-md"></i></div>
+                    <div class="stat-info">
+                        <h3>Total Doctors</h3>
+                        <p id="totalDoctors">Loading...</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #3b82f6;"><i class="fas fa-procedures"></i></div>
+                    <div class="stat-info">
+                        <h3>Total Patients</h3>
+                        <p id="totalPatients">Loading...</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #8b5cf6;"><i class="fas fa-file-invoice-dollar"></i></div>
+                    <div class="stat-info">
+                        <h3>Total Revenue</h3>
+                        <p id="totalRevenue">Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-header">
+                    <h2>System Overview & Analytics</h2>
+                </div>
+                <div style="padding: 20px;">
+                    <p style="color: #6b7280; font-size: 0.95rem; margin-bottom: 20px;">
+                        Welcome to the administrative console. From here, you can manage the core entity data, monitor user access, and oversee financial streams. Use the sidebar to drill down into specific sub-systems.
+                    </p>
+                    <div style="background: #f3f4f6; border-radius: 8px; padding: 20px; border-left: 4px solid #3b82f6; margin-bottom: 20px;">
+                        <h4 style="margin-bottom: 10px; color: #1f2937;"><i class="fas fa-server"></i> Server Status: <span style="color: #10b981;">Online & Healthy</span></h4>
+                        <p style="margin: 0; color: #4b5563;">All interconnected systems and databases are functioning perfectly.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="charts-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+                <div class="card" style="padding: 20px;">
+                    <h3 style="margin-bottom: 15px; font-size: 1.1rem; color: #374151;">System Log (Recent)</h3>
+                    <ul style="list-style: none; padding: 0; font-size: 0.9rem; color: #4b5563; line-height: 1.8;">
+                        <li><i class="fas fa-check-circle" style="color: #10b981; margin-right: 8px;"></i> System backup completed automatically.</li>
+                        <li><i class="fas fa-info-circle" style="color: #3b82f6; margin-right: 8px;"></i> Admin logged into the system.</li>
+                        <li><i class="fas fa-check-circle" style="color: #10b981; margin-right: 8px;"></i> Database optimized successfully.</li>
+                    </ul>
+                </div>
+                <div class="card" style="padding: 20px; background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: white;">
+                    <h3 style="margin-bottom: 15px; font-size: 1.1rem; color: white;">Quick Admin Actions</h3>
+                    <button class="btn" style="background: rgba(255,255,255,0.2); color: white; width: 100%; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.4);">
+                        <i class="fas fa-user-plus"></i> Add New Global User
+                    </button>
+                    <button class="btn" style="background: rgba(255,255,255,0.2); color: white; width: 100%; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.4);">
+                        <i class="fas fa-database"></i> Trigger System Backup
+                    </button>
+                    <button class="btn" style="background: rgba(255,255,255,0.2); color: white; width: 100%; border: 1px solid rgba(255,255,255,0.4);">
+                        <i class="fas fa-shield-alt"></i> Revoke Sessions
+                    </button>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Fetch stats from existing APIs where possible to populate fields
+                
+                // Active Patients
+                const patients = await api.get('patients');
+                if(patients && Array.isArray(patients)) {
+                    document.getElementById('totalPatients').textContent = patients.length;
+                } else {
+                    document.getElementById('totalPatients').textContent = '0';
+                }
+
+                // Active Doctors
+                const doctors = await api.get('doctors');
+                if(doctors && Array.isArray(doctors)) {
+                    document.getElementById('totalDoctors').textContent = doctors.length;
+                } else {
+                    document.getElementById('totalDoctors').textContent = '0';
+                }
+
+                // Total Revenue
+                const billing = await api.get('billing');
+                let totalRev = 0;
+                if(billing && Array.isArray(billing)) {
+                    billing.forEach(b => {
+                        if (b.status === 'paid') {
+                            totalRev += parseFloat(b.amount || 0);
+                        }
+                    });
+                }
+                document.getElementById('totalRevenue').textContent = '$' + totalRev.toFixed(2);
+                
+                // Hardcode active users for UI demonstration
+                document.getElementById('totalUsers').textContent = '14';
+
+            } catch (err) {
+                console.error("Admin Dashboard error:", err);
+            }
+        });
+    </script>
+</body>
+</html>
