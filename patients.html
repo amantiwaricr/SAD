@@ -26,6 +26,7 @@
             <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
             <li><a href="patients.html" class="active"><i class="fas fa-user-injured"></i> Patients</a></li>
             <li><a href="doctors.html"><i class="fas fa-user-md"></i> Doctors</a></li>
+            <li><a href="nurses.html"><i class="fas fa-user-nurse"></i> Nurses</a></li>
             <li><a href="schedule.html"><i class="fas fa-calendar-alt"></i> Schedule</a></li>
             <li><a href="appointments.html"><i class="fas fa-calendar-check"></i> Appointments</a></li>
             <li><a href="billing.html"><i class="fas fa-file-invoice-dollar"></i> Billing</a></li>
@@ -76,7 +77,6 @@
         </section>
     </main>
 
-    <!-- Patient Modal -->
     <div class="modal" id="patientModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -122,6 +122,54 @@
         </div>
     </div>
 
+    <!-- Manage Nurses Modal -->
+    <div class="modal" id="assignNurseModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Manage Nurses for <span id="nursePatientName"></span></h2>
+                <button class="close-btn" onclick="hideModal('assignNurseModal')">&times;</button>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <form id="assignNurseForm" style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; align-items: end;">
+                    <input type="hidden" id="assignPatientId">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Nurse</label>
+                        <select id="nurseSelect" required style="width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 8px;">
+                            <option value="">Select Nurse...</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Shift</label>
+                        <select id="shiftSelect" required style="width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 8px;">
+                            <option value="Morning">Morning</option>
+                            <option value="Evening">Evening</option>
+                            <option value="Night">Night</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Assign</button>
+                </form>
+            </div>
+
+            <div class="table-responsive">
+                <table id="assignedNursesTable">
+                    <thead>
+                        <tr>
+                            <th>Nurse</th>
+                            <th>Category</th>
+                            <th>Shift</th>
+                            <th>Date</th>
+                            <th>Remove</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="5">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <script src="js/api.js"></script>
     <script src="js/main.js"></script>
     <script>
@@ -143,6 +191,7 @@
                                 <td>${p.contact || 'N/A'}</td>
                                 <td>${p.address || 'N/A'}</td>
                                 <td>
+                                    <button class="btn btn-sm btn-info" onclick="manageNurses(${p.id}, '${p.first_name} ${p.last_name}')"><i class="fas fa-user-nurse"></i></button>
                                     <button class="btn btn-sm btn-primary" onclick="editPatient('${pJson}')"><i class="fas fa-edit"></i></button>
                                     <button class="btn btn-sm btn-danger" onclick="deleteItem('patients', ${p.id}, loadPatients)"><i class="fas fa-trash"></i></button>
                                 </td>
@@ -168,6 +217,98 @@
         document.getElementById('patientForm').addEventListener('submit', (e) => {
             handleFormSubmit(e, 'patients', loadPatients);
         });
+
+        // Manage Nurses Logic
+        async function manageNurses(patientId, patientName) {
+            document.getElementById('assignPatientId').value = patientId;
+            document.getElementById('nursePatientName').textContent = patientName;
+            showModal('assignNurseModal');
+            loadAssignedNurses(patientId);
+            
+            // Load available nurses for the dropdown
+            try {
+                const nurses = await api.get('nurses');
+                const select = document.getElementById('nurseSelect');
+                select.innerHTML = '<option value="">Select Nurse...</option>';
+                if(nurses && Array.isArray(nurses)) {
+                    nurses.forEach(n => {
+                        select.innerHTML += `<option value="${n.id}">${n.first_name} ${n.last_name} (${n.category})</option>`;
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to load nurses", err);
+            }
+        }
+
+        async function loadAssignedNurses(patientId) {
+            try {
+                const assignments = await api.get(`patient_nurses&patient_id=${patientId}`);
+                // Wait, api.get expects endpoint like 'patient_nurses' which fetches 'api/patient_nurses.php'.
+                // The param should be added to api.js or we make a direct call.
+                // Our api.js get method doesn't support query strings gracefully if we pass it like get('patient_nurses?patient_id=1') because it appends .php.
+                // Let's use fetchJSON directly.
+                const res = await api.fetchJSON(`api/patient_nurses.php?patient_id=${patientId}`);
+                const tbody = document.querySelector('#assignedNursesTable tbody');
+                tbody.innerHTML = '';
+                if(res && res.length > 0 && Array.isArray(res)) {
+                    res.forEach(a => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${a.first_name} ${a.last_name}</td>
+                                <td><span class="badge bg-primary">${a.category}</span></td>
+                                <td>${a.shift}</td>
+                                <td>${a.assigned_date}</td>
+                                <td><button class="btn btn-sm btn-danger" onclick="removeNurseAssignment(${a.id}, ${patientId})"><i class="fas fa-times"></i></button></td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5">No nurses assigned</td></tr>';
+                }
+            } catch (err) {
+                console.error(err);
+                document.querySelector('#assignedNursesTable tbody').innerHTML = '<tr><td colspan="5">Error loading assignments</td></tr>';
+            }
+        }
+
+        document.getElementById('assignNurseForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const patientId = document.getElementById('assignPatientId').value;
+            const nurseId = document.getElementById('nurseSelect').value;
+            const shift = document.getElementById('shiftSelect').value;
+            const today = new Date().toISOString().split('T')[0];
+
+            try {
+                const res = await api.fetchJSON('api/patient_nurses.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ patient_id: patientId, nurse_id: nurseId, shift: shift, assigned_date: today })
+                });
+                if(res.status === 'success') {
+                    loadAssignedNurses(patientId);
+                } else {
+                    alert(res.message);
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Failed to assign nurse");
+            }
+        });
+
+        async function removeNurseAssignment(assignmentId, patientId) {
+            if(confirm("Are you sure you want to remove this nurse assignment?")) {
+                try {
+                    const res = await api.fetchJSON(`api/patient_nurses.php?id=${assignmentId}`, { method: 'DELETE' });
+                    if(res.status === 'success') {
+                        loadAssignedNurses(patientId);
+                    } else {
+                        alert(res.message);
+                    }
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', loadPatients);
     </script>

@@ -85,6 +85,27 @@ CREATE TABLE IF NOT EXISTS appointments (
     FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS nurses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    category VARCHAR(50) NOT NULL,
+    contact VARCHAR(20),
+    email VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS patient_nurses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    patient_id INT NOT NULL,
+    nurse_id INT NOT NULL,
+    assigned_date DATE NOT NULL,
+    shift VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
+    FOREIGN KEY (nurse_id) REFERENCES nurses(id) ON DELETE CASCADE
+);
+
 -- Insert a default admin user (password: admin123)
 -- In a real app we'd hash the password. For simplicity and demonstration, we'll assume the PHP script uses password_verify.
 -- Hash for 'admin123'

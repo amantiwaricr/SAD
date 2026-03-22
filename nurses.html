@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Doctors - Modern HMS</title>
+    <title>Nurses - Modern HMS</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
@@ -16,8 +16,8 @@
         <ul class="sidebar-menu">
             <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
             <li><a href="patients.html"><i class="fas fa-user-injured"></i> Patients</a></li>
-            <li><a href="doctors.html" class="active"><i class="fas fa-user-md"></i> Doctors</a></li>
-            <li><a href="nurses.html"><i class="fas fa-user-nurse"></i> Nurses</a></li>
+            <li><a href="doctors.html"><i class="fas fa-user-md"></i> Doctors</a></li>
+            <li><a href="nurses.html" class="active"><i class="fas fa-user-nurse"></i> Nurses</a></li>
             <li><a href="schedule.html"><i class="fas fa-calendar-alt"></i> Schedule</a></li>
             <li><a href="appointments.html"><i class="fas fa-calendar-check"></i> Appointments</a></li>
             <li><a href="billing.html"><i class="fas fa-file-invoice-dollar"></i> Billing</a></li>
@@ -28,7 +28,7 @@
 
     <main class="main-content">
         <header class="header">
-            <div class="page-title">Doctor Records</div>
+            <div class="page-title">Nurse Records</div>
             <div class="user-info">
                 <span id="userNameDisplay">Loading...</span>
                 <span class="badge bg-success" id="userRoleDisplay">Role</span>
@@ -39,16 +39,16 @@
         <section class="content-area">
             <div class="card">
                 <div class="card-header">
-                    <h2>Doctor List</h2>
-                    <button class="btn btn-primary" onclick="showModal('doctorModal')"><i class="fas fa-plus"></i> Add Doctor</button>
+                    <h2>Nurse List</h2>
+                    <button class="btn btn-primary" onclick="showModal('nurseModal')"><i class="fas fa-plus"></i> Add Nurse</button>
                 </div>
                 <div class="table-responsive">
-                    <table id="doctorsTable">
+                    <table id="nursesTable">
                         <thead>
                             <tr>
                                 <th>ID</th>
                                 <th>Name</th>
-                                <th>Specialization</th>
+                                <th>Category</th>
                                 <th>Contact</th>
                                 <th>Actions</th>
                             </tr>
@@ -63,13 +63,13 @@
     </main>
 
     <!-- Modal -->
-    <div class="modal" id="doctorModal">
+    <div class="modal" id="nurseModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Add/Edit Doctor</h2>
-                <button class="close-btn" onclick="hideModal('doctorModal')">&times;</button>
+                <h2>Add/Edit Nurse</h2>
+                <button class="close-btn" onclick="hideModal('nurseModal')">&times;</button>
             </div>
-            <form id="doctorForm">
+            <form id="nurseForm">
                 <input type="hidden" name="id">
                 <div class="form-group">
                     <label>First Name</label>
@@ -80,8 +80,14 @@
                     <input type="text" name="last_name" required>
                 </div>
                 <div class="form-group">
-                    <label>Specialization</label>
-                    <input type="text" name="specialization" required>
+                    <label>Category</label>
+                    <select name="category" required style="width: 100%; padding: 0.75rem 1rem; border: 1px solid #e5e7eb; border-radius: 8px; font-family: 'Inter', sans-serif;">
+                        <option value="General">General</option>
+                        <option value="ER">ER</option>
+                        <option value="ICU">ICU</option>
+                        <option value="Pediatric">Pediatric</option>
+                        <option value="OR">OR</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>Contact Number</label>
@@ -91,7 +97,7 @@
                     <label>Email</label>
                     <input type="email" name="email">
                 </div>
-                <button type="submit" class="btn btn-primary" style="width:100%">Save Doctor</button>
+                <button type="submit" class="btn btn-primary" style="width:100%">Save Nurse</button>
             </form>
         </div>
     </div>
@@ -99,47 +105,53 @@
     <script src="js/api.js"></script>
     <script src="js/main.js"></script>
     <script>
-        async function loadDoctors() {
+        async function loadNurses() {
             try {
-                const data = await api.get('doctors');
-                const tbody = document.querySelector('#doctorsTable tbody');
+                const data = await api.get('nurses');
+                const tbody = document.querySelector('#nursesTable tbody');
                 tbody.innerHTML = '';
                 if(data && data.length > 0 && Array.isArray(data)) {
                     data.forEach(d => {
                         const tr = document.createElement('tr');
                         const pJson = JSON.stringify(d).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+                        
+                        let badgeColor = 'bg-primary';
+                        if(d.category === 'ICU') badgeColor = 'bg-danger';
+                        if(d.category === 'ER') badgeColor = 'bg-warning';
+                        if(d.category === 'Pediatric') badgeColor = 'bg-success';
+
                         tr.innerHTML = `
                             <td>#${d.id}</td>
-                            <td>Dr. ${d.first_name} ${d.last_name}</td>
-                            <td><span class="badge bg-success">${d.specialization}</span></td>
+                            <td>Nurse ${d.first_name} ${d.last_name}</td>
+                            <td><span class="badge ${badgeColor}">${d.category}</span></td>
                             <td>${d.contact || 'N/A'}</td>
                             <td>
-                                <button class="btn btn-sm btn-primary" onclick="editDoctor('${pJson}')"><i class="fas fa-edit"></i></button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteItem('doctors', ${d.id}, loadDoctors)"><i class="fas fa-trash"></i></button>
+                                <button class="btn btn-sm btn-primary" onclick="editNurse('${pJson}')"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteItem('nurses', ${d.id}, loadNurses)"><i class="fas fa-trash"></i></button>
                             </td>
                         `;
                         tbody.appendChild(tr);
                     });
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="5">No doctors found</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5">No nurses found</td></tr>';
                 }
             } catch (err) {
                 console.error(err);
-                document.querySelector('#doctorsTable tbody').innerHTML = '<tr><td colspan="5">Error loading data.</td></tr>';
+                document.querySelector('#nursesTable tbody').innerHTML = '<tr><td colspan="5">Error loading data.</td></tr>';
             }
         }
 
-        function editDoctor(dataStr) {
+        function editNurse(dataStr) {
             const data = JSON.parse(dataStr);
-            populateForm('doctorForm', data);
-            showModal('doctorModal');
+            populateForm('nurseForm', data);
+            showModal('nurseModal');
         }
 
-        document.getElementById('doctorForm').addEventListener('submit', (e) => {
-            handleFormSubmit(e, 'doctors', loadDoctors);
+        document.getElementById('nurseForm').addEventListener('submit', (e) => {
+            handleFormSubmit(e, 'nurses', loadNurses);
         });
 
-        document.addEventListener('DOMContentLoaded', loadDoctors);
+        document.addEventListener('DOMContentLoaded', loadNurses);
     </script>
 </body>
 </html>
